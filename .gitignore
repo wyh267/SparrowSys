@@ -1,0 +1,15 @@
+*.o
+*.swp
+*github.com*
+*bin/
+*distribution/
+*pkg/
+index/*
+*data/
+*.log*
+*.json*
+*.dat*
+*.sql*
+.DS_Store
+nohup.out
+*.log
