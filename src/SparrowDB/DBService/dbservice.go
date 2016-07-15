@@ -10,10 +10,19 @@
 //package DBService
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"utils"
+	dl "SparrowDB/DataLayer"
+)
 
 func main() {
 
 	fmt.Printf("Start DB ....")
-
+	logger,_ := utils.New("logname")
+	
+	logger.Info("info...")
+	db:=dl.NewSDatabase("testdb","./",logger)
+	db.AddData(nil)
+	
 }
