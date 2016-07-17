@@ -10,18 +10,24 @@
 package DataLayer
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"utils"
 )
 
-type SDatabase struct {
-	Name     string `json:"dbname"`
-	Pathname string `json:"pathname"`
-	Fullname string `json:"fullname`
-	tables   map[string]*STable
+type TableInfo struct {
+	Tablename string `json:"tablename"`
+}
 
-	Logger *utils.Log4FE
+type SDatabase struct {
+	Name       string             `json:"dbname"`
+	Pathname   string             `json:"pathname"`
+	Fullname   string             `json:"fullname`
+	TableNames []string           `json:"tables"`
+	tables     map[string]*STable `json:"-"`
+
+	Logger *utils.Log4FE `json:"-"`
 }
 
 //NewSTable(tablename, pathname string, fieldsinfo map[string]FieldMeta, logger *utils.Log4FE) *STable
@@ -49,6 +55,35 @@ func NewSDatabase(dbname, dbpath string, logger *utils.Log4FE) *SDatabase {
 	return this
 }
 
+func OpenSDatabase(dbname, dbpath string, logger *utils.Log4FE) *SDatabase {
+
+	this := &SDatabase{Logger: logger, Pathname: dbpath, Name: dbname}
+
+	this.Fullname = dbpath + "/" + dbname
+
+
+	buffer, err := utils.ReadFromJson(this.Fullname + "/_dbinfo.meta")
+	if err != nil {
+		return nil
+	}
+
+	err = json.Unmarshal(buffer, this)
+	if err != nil {
+		return nil
+	}
+    
+    for _,tablename := range this.TableNames {
+        
+        //TODO
+        
+        
+    }
+    
+    return this
+    
+
+}
+
 // initDatabase function description : 初始化数据库
 // params :
 // return :
@@ -56,6 +91,7 @@ func (this *SDatabase) initDatabase() error {
 
 	//初始化table
 	this.tables = make(map[string]*STable)
+	this.TableNames = make([]string, 0)
 
 	return nil
 
@@ -72,7 +108,7 @@ func (this *SDatabase) CreateTable(tablename string, fieldinfos []FieldMeta) err
 
 	}
 
-	table := NewSTable(tablename, this.Fullname, fieldinfos,this.Logger)
+	table := NewSTable(tablename, this.Fullname, fieldinfos, this.Logger)
 
 	if table == nil {
 		this.Logger.Error("[ERROR] Create Table[%v] Fail", tablename)
@@ -80,14 +116,23 @@ func (this *SDatabase) CreateTable(tablename string, fieldinfos []FieldMeta) err
 	}
 
 	this.tables[tablename] = table
+	this.TableNames = append(this.TableNames, tablename)
+
+	utils.WriteToJson(this, this.Fullname+"/_dbinfo.meta")
 
 	return nil
 
 }
 
-func (this *SDatabase) AddData(content map[string]string) error {
+func (this *SDatabase) AddData(tablename string, content map[string]string) error {
 
-	return nil
+	if _, ok := this.tables[tablename]; ok {
+
+		return this.tables[tablename].AddData(content)
+
+	}
+
+	return fmt.Errorf("[ERROR] Table[%v] Not Found", tablename)
 
 }
 
@@ -107,7 +152,15 @@ func (this *SDatabase) FindData(field, value string) []utils.DocID {
 
 }
 
-func (this *SDatabase) FindDocId(docid utils.DocID) map[string]string {
+func (this *SDatabase) FindDocId(tablename string, docid int64) map[string]string {
+
+	if _, ok := this.tables[tablename]; ok {
+
+		return this.tables[tablename].FindDocId(docid)
+
+	}
+
+	this.Logger.Error("[ERROR] Table[%v] Not Found", tablename)
 
 	return nil
 }

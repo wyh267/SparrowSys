@@ -304,3 +304,68 @@ func (this *Mmap) WriteStringWith32Bytes(start int64, value string, lens int64) 
 	this.WriteBytes(start+4, []byte(value))
 	return nil
 }
+
+
+
+
+func (this *Mmap) AppendUInt32(value uint32) error {
+
+	if err := this.checkFilePointer(4); err != nil {
+		return err
+	}
+
+	binary.LittleEndian.PutUint32(this.MmapBytes[this.FilePointer:this.FilePointer + 4], value)
+	this.FilePointer += 4
+	return nil //this.Sync()
+}
+
+
+
+// AppendRecord function description : 根据长度写入字符串[ | len(2bytes) | value | XXX填充 | ]
+// params : 
+// return : 
+func (this *Mmap) AppendRecord(value []byte) error {
+	
+	
+	/*
+	if err:=this.AppendUInt32(lens); err != nil {
+		return err
+	}
+	
+	reallens := uint32(len(value))
+	
+	if reallens > lens {
+		reallens = lens 
+	}
+	
+	if err := this.checkFilePointer(int64(lens)); err != nil {
+		return err
+	}
+	dst := this.MmapBytes[this.FilePointer : this.FilePointer+int64(reallens)]
+	copy(dst, value[:reallens])
+	this.FilePointer += int64(lens)
+	return nil 
+	*/
+	
+	lens := int64(len(value))
+	
+	
+	if err := this.checkFilePointer(int64(lens)); err != nil {
+		return err
+	}
+	dst := this.MmapBytes[this.FilePointer : this.FilePointer+lens]
+	copy(dst, value)
+	this.FilePointer += lens
+	return nil 
+	
+	
+}
+
+
+
+func (this *Mmap) ReadRecord(start int64,lens uint32) []byte{
+	
+	return this.Read(start,start+int64(lens))
+	
+	
+}

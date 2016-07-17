@@ -42,17 +42,29 @@ func TestNewDB(t *testing.T) {
 		fmt.Printf("error\n")
 	}
 
-
-    fields := make([]FieldMeta,0) 
-    fields = append(fields,FieldMeta{FieldLen:10,Fieldname:"id",FieldType:0,MkIdx:true})
-    fields = append(fields,FieldMeta{FieldLen:10,Fieldname:"name",FieldType:0,MkIdx:true})
-    fields = append(fields,FieldMeta{FieldLen:10,Fieldname:"age",FieldType:0,MkIdx:false})
-
-
+	fields := make([]FieldMeta, 0)
+	fields = append(fields, FieldMeta{FieldLen: 10, Fieldname: "id", FieldType: 0, MkIdx: true})
+	fields = append(fields, FieldMeta{FieldLen: 10, Fieldname: "name", FieldType: 0, MkIdx: true})
+	fields = append(fields, FieldMeta{FieldLen: 10, Fieldname: "age", FieldType: 0, MkIdx: false})
 
 	err = db.CreateTable("biao", fields)
 	if err != nil {
 		fmt.Printf("biao err\n")
 	}
+
+	content := make(map[string]string)
+
+	content["id"] = "10"
+	content["name"] = "abc"
+	content["age"] = "20"
+
+	for i := 0; i < 100000; i++ {
+        db.AddData("biao",content)
+	}
+
+
+    res:=db.FindDocId("biao",3456)
+
+    fmt.Printf("%v\n",res)
 
 }
