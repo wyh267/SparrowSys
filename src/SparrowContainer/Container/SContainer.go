@@ -16,7 +16,7 @@ import (
 	"syscall"
 )
 
-var CONTAINER_PROCESS string = "./startContainer"
+var CONTAINER_PROCESS string = "./SparrowContainer"
 
 type NetInfo struct {
 	Dev     string
@@ -73,16 +73,16 @@ func (this *SContainer) RunContainer() error {
 
 	//配置根文件系统
 	rootfsArg := fmt.Sprintf("-f=%v", this.Rootfs)
-	args = append(args, rootfs_arg)
+	args = append(args, rootfsArg)
 
 	//配置启动进程
-	startProcess := fmt.Sprintf("-p=\"%v\"", this.InitProcess)
+	startProcess := fmt.Sprintf("-p=%v", this.InitProcess)
 	args = append(args, startProcess)
 	//配置网络
 
 	cmd := exec.Command(CONTAINER_PROCESS, args...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS | syscall.CLONE_NEWNET,
+		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS, // | syscall.CLONE_NEWNET,
 	}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout

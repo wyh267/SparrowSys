@@ -20,7 +20,6 @@ func main() {
 	flag.StringVar(&hostname, "h", "hello_world", "主机名称")
 	flag.StringVar(&process, "p", "/bin/sh", "运行进程")
 	flag.Parse()
-
 	if err := runProcess(process, rootfs, hostname); err != nil {
 
 		fmt.Printf("run process error : %v", err)
@@ -46,16 +45,32 @@ func runProcess(processname, rootfs, hostname string) error {
 		return err
 	}
 
+	syspath := filepath.Join(rootfs, "sys")
+	tmpMountPointSys := filepath.Join(tmpMountPoint, "sys")
+	if err := syscall.Mount(syspath, tmpMountPointSys, "sysfs", 0, ""); err != nil {
+		return err
+	}
+
+	tmpMountPointDev := filepath.Join(tmpMountPoint, "dev")
+	if err := syscall.Mount("udev", tmpMountPointDev, "devtmpfs", 0, ""); err != nil {
+		return err
+	}
+
+	tmpMountPointDevpts := filepath.Join(tmpMountPoint, "dev/pts")
+	if err := syscall.Mount("devpts", tmpMountPointDevpts, "devpts", 0, ""); err != nil {
+		return err
+	}
+
 	tmpDir := filepath.Join(tmpMountPoint, pivotBaseDir)
 	os.MkdirAll(tmpDir, 0755)
-	pivotDir, err := ioutil.TempDir(tmpDir, ".tmpmount")
+	pivotDir, err := ioutil.TempDir(tmpDir, ".mount_root_tmp")
 	if err != nil {
 		return err
 	}
 
 	if err := syscall.PivotRoot(tmpMountPoint, pivotDir); err != nil {
 
-		fmt.Printf("root err :%v\n", err)
+		fmt.Printf("mount root err :%v\n", err)
 		return err
 	}
 
@@ -63,20 +78,19 @@ func runProcess(processname, rootfs, hostname string) error {
 		return err
 	}
 
-	fmt.Printf("pivotDir : %v \n ", pivotDir)
 	pivotDir = filepath.Join(pivotBaseDir, filepath.Base(pivotDir))
 
-	fmt.Printf("pivotDir : %v \n ", pivotDir)
 	if err := syscall.Mount("", pivotDir, "", syscall.MS_PRIVATE|syscall.MS_REC, ""); err != nil {
-		fmt.Printf("mout err : %v", err)
+		fmt.Printf("mount private err : %v \n", err)
 		return err
 	}
 
 	if err := syscall.Unmount(pivotDir, syscall.MNT_DETACH); err != nil {
-		fmt.Printf("unmount pivot_root dir %s", err)
+		fmt.Printf("unmount root_tmp error :  %v \n", err)
 		return err
 	}
 	if err := os.Remove(pivotDir); err != nil {
+		fmt.Printf("remove temp mount root dir error :%v \n", err)
 		return err
 	}
 	//配置网络
@@ -86,10 +100,9 @@ func runProcess(processname, rootfs, hostname string) error {
 	fmt.Printf("command : %v ", processname)
 
 	processCmd := strings.Split(processname, " ")
-
 	var cmd *exec.Cmd
-	if len(processCmd) < 2 {
-		cmd = exec.Command(processname)
+	if len(processCmd) == 1 {
+		cmd = exec.Command(processCmd[0])
 	} else {
 		cmd = exec.Command(processCmd[0], processCmd[1:]...)
 	}

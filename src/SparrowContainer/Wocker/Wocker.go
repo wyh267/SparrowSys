@@ -1,22 +1,13 @@
-
-
 package main
 
-
-
 import (
-    
-    "Container"
+	"SparrowContainer/Container"
 )
 
-
-
 func main() {
-    
-    container := Container.NewContainerWithConfig("hello","/root/wocker/rootfs","/bin/bash",nil)
-    
-    container.RunContainer()
-    
-    
-    
+
+	container := Container.NewContainerWithConfig("hello", "/root/wocker/rootfs/", "/root/start_container.sh", nil)
+
+	container.RunContainer()
+
 }
